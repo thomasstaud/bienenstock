@@ -1,92 +1,62 @@
-use aufgaben::*;
+use core::time;
+use std::thread;
 
-mod aufgaben;
+// executes bienenstock code
+pub fn run(commands: Vec<&str>) {
+    let mut biene_handles = vec![];
 
-struct Biene {
-    nektar: u32,
-    aufgabe: Box<dyn Aufgabe>
-}
+    let mut biene_busy = [false; 1000];
+    let mut wabe_names = [""; 1000];
+    let mut wabe_honig = [0; 1000];
 
-struct Wabe {
-    name: String,
-    honig: u32
-}
-
-pub struct Bienenstock {
-    bienen: Vec<Biene>,
-    waben: Vec<Wabe>
-}
-
-impl Bienenstock {
-    pub fn build() -> Self {
-        let mut bienenstock = Bienenstock {
-            bienen: Vec::new(),
-            waben: Vec::new()
-        };
-
-        // generate 1000 bienen and waben
-        for _ in 0..1000 {
-            bienenstock.bienen.push(Biene {
-                nektar: 0,
-                aufgabe: Box::new(Leerlauf {})
-            });
-
-            bienenstock.waben.push(Wabe {
-                name: String::new(),
-                honig: 0
-            });
-        }
-
-        bienenstock
-    }
-
-    pub fn rename(&mut self, wabe_index: usize, name: &str) {
-        match self.waben.get_mut(wabe_index - 1) {
-            Some(wabe) => wabe.name = name.to_string(),
-            None => panic!("Wabe {wabe_index} existiert nicht")
-        }
-    }
-
-    pub fn tanzen(&mut self, biene_index: usize, wabe_index: usize, name: bool) {
-        // edit aufgabe -> mutable
-        let biene = match self.bienen.get_mut(biene_index - 1) {
-            Some(biene) => biene,
-            None => panic!("Biene {biene_index} existiert nicht")
-        };
-        biene.aufgabe = Box::new(Tanzen { name, wabe_index });
-
-        // execute aufgabe -> immutable
-        let biene = self.bienen.get(biene_index - 1).unwrap();
-        biene.aufgabe.execute(&self);
-    }
-
-    pub fn print(&self, wabe_index: usize, name: bool) {
-        let wabe = self.waben.get(wabe_index - 1).unwrap();
-
-        if name {
-            println!("{}", wabe.name);
-        } else {
-            println!("{}", wabe.honig);
-        }
-    }
-
-    pub fn print_all(&self) {
-        // print all bienen with nektar or aufgabe
-        for (i, biene) in self.bienen.iter().enumerate() {
-            if biene.nektar != 0 {
-                println!("Biene {i} hat {} Nektar", biene.nektar);
+    for command in commands {
+        let mut params = command.split(" ");
+        // execute code based on command
+        match params.next() {
+            Some("Wabe") => {
+                // rename wabe
+                let wabe_index: usize = params.next().expect("Syntax Error")
+                    .parse().expect("Syntax Error");
+                let wabe_name: &str = command.split("\"").nth(1)
+                    .expect("Syntax Error");
+                wabe_names[wabe_index] = wabe_name;
             }
+            Some("Biene") => {
+                // tanze name of wabe
+                let biene_index: usize = params.next().expect("Syntax Error")
+                    .split(",").next().expect("Syntax Error")
+                    .parse().expect("Syntax Error");
 
-            if let Some(str) = biene.aufgabe.to_string() {
-                println!("Biene {i} {str}");
-            }
-        }
+                if biene_busy[biene_index] {
+                    // crash if biene is already doing something
+                    panic!("Biene {biene_index} is busy!");
+                } else {
+                    if params.next() != Some("tanze") { panic!("Syntax Error"); }
+                    if params.next() != Some("den") { panic!("Syntax Error"); }
+                    if params.next() != Some("Namen") { panic!("Syntax Error"); }
+                    if params.next() != Some("von") { panic!("Syntax Error"); }
+                    if params.next() != Some("Wabe") { panic!("Syntax Error"); }
 
-        // print all waben with name or honig
-        for (i, wabe) in self.waben.iter().enumerate() {
-            if !wabe.name.is_empty() || wabe.honig != 0 {
-                println!("Wabe {i} ({}) hat {} Honig", wabe.name, wabe.honig);
+                    let wabe_index: usize = params.next().expect("Syntax Error")
+                        .parse().expect("Syntax Error");
+                    let wabe_name = String::from(wabe_names[wabe_index]);
+
+                    // spawn thread for biene to tanz
+                    let handle = thread::spawn(move || {
+                        thread::sleep(time::Duration::from_secs(2));
+                        println!("{wabe_name}");
+                    });
+                    biene_handles.push(handle);
+                }
+
             }
+            Some("So!") => println!("So!"),
+            Some(param) => panic!("Unknown Command: '{}'", param),
+            _ => ()
         }
+    }
+
+    for handle in biene_handles {
+        handle.join().unwrap();
     }
 }
