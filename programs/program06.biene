@@ -1,0 +1,13 @@
+<#!--: Variablen :--!#>.
+Biene 1, hole 25 Nektar.
+Biene 2, hole 10 Nektar.
+Biene 3, hole 30 Nektar und warte.
+Warte auf Biene 1.
+Biene 3, bringe Honig zu Wabe 2.
+Biene 1, bringe Honig zu Wabe 1 und warte.
+Warte auf Biene 3.
+Biene 1, hole [Honig Biene 2] Honig von Wabe 1 und warte.
+Biene 1, tanze den Honig von Wabe 1.
+Biene 3, hole [Honig Wabe 1] Honig von Wabe 2 und warte.
+Biene 3, tanze den Honig von Wabe 1.
+So!
