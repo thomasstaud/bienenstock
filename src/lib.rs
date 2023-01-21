@@ -16,7 +16,7 @@ struct Wabe {
 }
 
 // executes bienenstock code
-pub fn run(commands: Vec<&str>) {
+pub fn run(lines: Vec<&str>) {
     let sleep_secs = 1;
 
     let mut biene_handles = vec![];
@@ -40,11 +40,16 @@ pub fn run(commands: Vec<&str>) {
         })
     }
 
-    for mut command in commands {
+    let mut line_number = 0;
+    let mut line: &str = lines.get(line_number).unwrap();
+
+    loop {
+        let mut command = line;
+
         let mut var_blocks = command.split("[").into_iter();
         var_blocks.next();
 
-        let mut new_command = command.to_owned();
+        let mut tmp_command = command.to_owned();
         for var_block in var_blocks {
             let variable = &var_block[..var_block.find("]").unwrap()];
 
@@ -64,9 +69,9 @@ pub fn run(commands: Vec<&str>) {
             }
             .to_string();
 
-            new_command = str::replace(&command, &replace_from, &replace_to);
+            tmp_command = str::replace(&command, &replace_from, &replace_to);
         }
-        command = &new_command;
+        command = &tmp_command;
 
         // DEBUG
         // println!("{command}");
@@ -75,14 +80,14 @@ pub fn run(commands: Vec<&str>) {
         // execute code based on command
         match params.next().unwrap() {
             "Wabe" => {
-                // CMD Wabe X heißt "Y".
+                // CMD Wabe A heißt "B".
                 // rename wabe
                 let wabe_index: usize = params.next().unwrap().parse().unwrap();
                 let wabe_name: &str = command.split("\"").nth(1).unwrap();
                 waben.lock().unwrap()[wabe_index].name = wabe_name.to_string();
             }
             "Biene" => {
-                // CMD Biene X, ...
+                // CMD Biene A, ...
                 // find biene index
                 let biene_index: usize = params
                     .next()
@@ -104,7 +109,7 @@ pub fn run(commands: Vec<&str>) {
 
                 match params.next().unwrap() {
                     "tanze" => {
-                        // CMD Biene X, tanze den Y von Wabe Z.
+                        // CMD Biene A, tanze den B von Wabe C.
                         // check what should be printed
                         let name: bool = match params.nth(1) {
                             Some("Namen") => true,
@@ -130,9 +135,9 @@ pub fn run(commands: Vec<&str>) {
                         biene_handles.push(handle);
                     }
                     "hole" => {
-                        // CMD Biene X, hole Y Nektar.
+                        // CMD Biene A, hole B Nektar.
                         // oder:
-                        // CMD Biene X, hole Y Honig von Wabe Z
+                        // CMD Biene A, hole B Honig von Wabe C
                         let amount: u32 = params.next().unwrap().parse().unwrap();
 
                         match params.next() {
@@ -166,7 +171,7 @@ pub fn run(commands: Vec<&str>) {
                         }
                     }
                     "sammle" => {
-                        // CMD Biene X, sammle Y vom Benutzer.
+                        // CMD Biene A, sammle B vom Benutzer.
                         // sammle input from user
                         let mut input = String::new();
                         io::stdin().read_line(&mut input).unwrap();
@@ -199,7 +204,7 @@ pub fn run(commands: Vec<&str>) {
                         biene_handles.push(handle);
                     }
                     "bringe" => {
-                        // CMD Biene X, bringe Y zu Wabe Z.
+                        // CMD Biene A, bringe B zu Wabe C.
                         // save name or honig to wabe
                         let name: bool = match params.next() {
                             Some("Namen") => true,
@@ -233,7 +238,7 @@ pub fn run(commands: Vec<&str>) {
                     _ => panic!("Unknown Command: '{command}'"),
                 }
 
-                // CMD Biene X, ... und warte.
+                // CMD Biene A, ... und warte.
                 match params.nth(1) {
                     Some("warte") => {
                         while biene_busy.lock().unwrap()[biene_index] {
@@ -244,22 +249,82 @@ pub fn run(commands: Vec<&str>) {
                     None => (),
                 }
             }
+            "Wenn" => {
+                // CMD Wenn A B mehr Honig hat als C D, starte die Choreografie E.
+                // CMD Wenn A B gleich viel Honig hat als C D, starte die Choreografie E.
+                // CMD Wenn A B weniger Honig hat als C D, starte die Choreografie E.
+                let obj1_biene = match params.next().unwrap() {
+                    "Biene" => true,
+                    "Wabe" => false,
+                    _ => panic!("Unknown Command: {command}")
+                };
+                let obj1_index: usize = params.next().unwrap().parse().unwrap();
+
+                let comparison = match params.next().unwrap() {
+                    "gleich" => {
+                        // skip "viel"
+                        params.next();
+                        "gleich"
+                    },
+                    comp => comp,
+                };
+
+                let obj2_biene = match params.nth(3).unwrap() {
+                    "Biene" => true,
+                    "Wabe" => false,
+                    _ => panic!("Unknown Command: {command}")
+                };
+                // remove colon from index
+                let mut obj2_index = params.next().unwrap().to_string();
+                obj2_index.pop().unwrap();
+                let obj2_index: usize = obj2_index.parse().unwrap();
+
+                let val1 = match obj1_biene {
+                    true => bienen.lock().unwrap()[obj1_index].honig,
+                    false => waben.lock().unwrap()[obj1_index].honig,
+                };
+
+                let val2 = match obj2_biene {
+                    true => bienen.lock().unwrap()[obj2_index].honig,
+                    false => waben.lock().unwrap()[obj2_index].honig,
+                };
+
+                if match comparison {
+                    "gleich" => val1 == val2,
+                    "weniger" => val1 < val2,
+                    "mehr" => val1 > val2,
+                    _ => panic!("Unknown Command: {command}")
+                } {
+                    // start choreografie
+                    let choreografie = "\"".to_string() + command.split("\"").nth(1).unwrap() + "\"";
+                    for (nr, line) in lines.iter().enumerate() {
+                        if line.contains(&choreografie) {
+                            line_number = nr;
+                            break;
+                        }
+                    }
+                }
+            }
             "Warte" => {
-                // CMD Warte auf Biene X.
+                // CMD Warte auf Biene A.
                 // wait for thread to end
                 let biene_index: usize = params.nth(2).unwrap().parse().unwrap();
                 while biene_busy.lock().unwrap()[biene_index] {
                     thread::sleep(Duration::from_millis(1));
                 }
             }
+            "Hier" => (),
             "<#!--:" => {
                 if params.last().unwrap() != ":--!#>" {
                     panic!("Comment was not properly closed: {command}");
                 }
             }
-            "So!" => (),
+            "So!" => { break; },
             _ => panic!("Unknown Command: '{command}'"),
         }
+
+        line_number += 1;
+        line = lines.get(line_number).unwrap();
     }
 
     for handle in biene_handles {
