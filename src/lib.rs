@@ -2,7 +2,7 @@ use std::{
     io,
     sync::{Arc, Mutex},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 struct Biene {
@@ -46,6 +46,7 @@ pub fn run(lines: Vec<&str>) {
     loop {
         let mut command = line;
 
+        // variables
         let mut var_blocks = command.split("[").into_iter();
         var_blocks.next();
 
@@ -55,7 +56,14 @@ pub fn run(lines: Vec<&str>) {
 
             let mut params = variable.split(" ");
 
-            let biene: bool = match params.nth(1) {
+            let value: u8 = match params.next() {
+                Some("Name") => 0,
+                Some("Honig") => 1,
+                Some("Namenslänge") => 2,
+                _ => panic!("Syntax Error"),
+            };
+
+            let biene: bool = match params.next() {
                 Some("Biene") => true,
                 Some("Wabe") => false,
                 _ => panic!("Syntax Error"),
@@ -63,11 +71,21 @@ pub fn run(lines: Vec<&str>) {
             let index: usize = params.next().unwrap().parse().unwrap();
 
             let replace_from = "[".to_owned() + variable + "]";
-            let replace_to = match biene {
-                true => bienen.lock().unwrap()[index].honig,
-                false => waben.lock().unwrap()[index].honig,
-            }
-            .to_string();
+            let replace_to = match value {
+                0 => match biene {
+                    true => bienen.lock().unwrap()[index - 1].name.to_owned(),
+                    false => waben.lock().unwrap()[index - 1].name.to_owned(),
+                },
+                1 => match biene {
+                    true => bienen.lock().unwrap()[index - 1].honig.to_string(),
+                    false => waben.lock().unwrap()[index - 1].honig.to_string(),
+                },
+                2 => match biene {
+                    true => bienen.lock().unwrap()[index - 1].name.len().to_string(),
+                    false => waben.lock().unwrap()[index - 1].name.len().to_string(),
+                },
+                _ => panic!("Fehler im bienenstock code."),
+            };
 
             tmp_command = str::replace(&command, &replace_from, &replace_to);
         }
@@ -84,7 +102,7 @@ pub fn run(lines: Vec<&str>) {
                 // rename wabe
                 let wabe_index: usize = params.next().unwrap().parse().unwrap();
                 let wabe_name: &str = command.split("\"").nth(1).unwrap();
-                waben.lock().unwrap()[wabe_index].name = wabe_name.to_string();
+                waben.lock().unwrap()[wabe_index - 1].name = wabe_name.to_string();
             }
             "Biene" => {
                 // CMD Biene A, ...
@@ -99,12 +117,12 @@ pub fn run(lines: Vec<&str>) {
                     .unwrap()
                     .clone();
 
-                if biene_busy.lock().unwrap()[biene_index] {
+                if biene_busy.lock().unwrap()[biene_index - 1] {
                     // crash if biene is already doing something
                     panic!("Biene {biene_index} is busy!");
                 } else {
                     // set biene to busy
-                    biene_busy.lock().unwrap()[biene_index] = true;
+                    biene_busy.lock().unwrap()[biene_index - 1] = true;
                 }
 
                 match params.next().unwrap() {
@@ -121,8 +139,8 @@ pub fn run(lines: Vec<&str>) {
 
                         // store whatever should be printed
                         let print = match name {
-                            true => waben.lock().unwrap()[wabe_index].name.to_owned(),
-                            false => waben.lock().unwrap()[wabe_index].honig.to_string(),
+                            true => waben.lock().unwrap()[wabe_index - 1].name.to_owned(),
+                            false => waben.lock().unwrap()[wabe_index - 1].honig.to_string(),
                         };
 
                         // spawn thread for biene to tanz
@@ -130,29 +148,14 @@ pub fn run(lines: Vec<&str>) {
                         let handle = thread::spawn(move || {
                             thread::sleep(Duration::from_secs(sleep_secs));
                             println!("{print}");
-                            biene_busy.lock().unwrap()[biene_index] = false;
+                            biene_busy.lock().unwrap()[biene_index - 1] = false;
                         });
                         biene_handles.push(handle);
                     }
                     "hole" => {
-                        // CMD Biene A, hole B Nektar.
-                        // oder:
-                        // CMD Biene A, hole B Honig von Wabe C
-                        let amount: u32 = params.next().unwrap().parse().unwrap();
-
-                        match params.next() {
-                            Some("Nektar") => {
-                                // spawn thread for biene to hol
-                                let biene_busy = Arc::clone(&biene_busy);
-                                let bienen = Arc::clone(&bienen);
-                                let handle = thread::spawn(move || {
-                                    thread::sleep(Duration::from_secs(sleep_secs));
-                                    bienen.lock().unwrap()[biene_index].honig += amount;
-                                    biene_busy.lock().unwrap()[biene_index] = false;
-                                });
-                                biene_handles.push(handle);
-                            }
-                            Some("Honig") => {
+                        match params.next().unwrap() {
+                            "Namen" => {
+                                // CMD Biene A, hole Namen von Wabe C.
                                 let wabe_index: usize = params.nth(2).unwrap().parse().unwrap();
 
                                 // spawn thread for biene to hol
@@ -161,13 +164,69 @@ pub fn run(lines: Vec<&str>) {
                                 let waben = Arc::clone(&waben);
                                 let handle = thread::spawn(move || {
                                     thread::sleep(Duration::from_secs(sleep_secs));
-                                    waben.lock().unwrap()[wabe_index].honig -= amount;
-                                    bienen.lock().unwrap()[biene_index].honig += amount;
-                                    biene_busy.lock().unwrap()[biene_index] = false;
+                                    bienen.lock().unwrap()[biene_index - 1].name =
+                                        waben.lock().unwrap()[wabe_index - 1].name.to_owned();
+                                    biene_busy.lock().unwrap()[biene_index - 1] = false;
                                 });
                                 biene_handles.push(handle);
                             }
-                            _ => panic!("Syntax Error"),
+                            "Buchstabe" => {
+                                // CMD Biene A, hole Buchstabe B von Wabe C.
+                                let buchstabe_index: usize =
+                                    params.next().unwrap().parse().unwrap();
+                                let wabe_index: usize = params.nth(2).unwrap().parse().unwrap();
+
+                                // spawn thread for biene to hol
+                                let biene_busy = Arc::clone(&biene_busy);
+                                let bienen = Arc::clone(&bienen);
+                                let waben = Arc::clone(&waben);
+                                let handle = thread::spawn(move || {
+                                    thread::sleep(Duration::from_secs(sleep_secs));
+                                    let mut name =
+                                        waben.lock().unwrap()[wabe_index - 1].name.to_owned();
+                                    let buchstabe = name.remove(buchstabe_index - 1).to_string();
+                                    bienen.lock().unwrap()[biene_index - 1].name = buchstabe;
+                                    waben.lock().unwrap()[wabe_index - 1].name = name;
+                                    biene_busy.lock().unwrap()[biene_index - 1] = false;
+                                });
+                                biene_handles.push(handle);
+                            }
+                            amount => {
+                                // CMD Biene A, hole B Nektar.
+                                // CMD Biene A, hole B Honig von Wabe C.
+                                let amount: u32 = amount.parse().unwrap();
+
+                                match params.next() {
+                                    Some("Nektar") => {
+                                        // spawn thread for biene to hol
+                                        let biene_busy = Arc::clone(&biene_busy);
+                                        let bienen = Arc::clone(&bienen);
+                                        let handle = thread::spawn(move || {
+                                            thread::sleep(Duration::from_secs(sleep_secs));
+                                            bienen.lock().unwrap()[biene_index - 1].honig += amount;
+                                            biene_busy.lock().unwrap()[biene_index - 1] = false;
+                                        });
+                                        biene_handles.push(handle);
+                                    }
+                                    Some("Honig") => {
+                                        let wabe_index: usize =
+                                            params.nth(2).unwrap().parse().unwrap();
+
+                                        // spawn thread for biene to hol
+                                        let biene_busy = Arc::clone(&biene_busy);
+                                        let bienen = Arc::clone(&bienen);
+                                        let waben = Arc::clone(&waben);
+                                        let handle = thread::spawn(move || {
+                                            thread::sleep(Duration::from_secs(sleep_secs));
+                                            waben.lock().unwrap()[wabe_index - 1].honig -= amount;
+                                            bienen.lock().unwrap()[biene_index - 1].honig += amount;
+                                            biene_busy.lock().unwrap()[biene_index - 1] = false;
+                                        });
+                                        biene_handles.push(handle);
+                                    }
+                                    _ => panic!("Syntax Error"),
+                                }
+                            }
                         }
                     }
                     "sammle" => {
@@ -191,15 +250,15 @@ pub fn run(lines: Vec<&str>) {
                             thread::sleep(Duration::from_secs(sleep_secs));
                             match name {
                                 true => {
-                                    bienen.lock().unwrap()[biene_index].name =
+                                    bienen.lock().unwrap()[biene_index - 1].name =
                                         input.trim().to_string()
                                 }
                                 false => {
-                                    bienen.lock().unwrap()[biene_index].honig =
+                                    bienen.lock().unwrap()[biene_index - 1].honig =
                                         input.trim().parse().unwrap()
                                 }
                             };
-                            biene_busy.lock().unwrap()[biene_index] = false;
+                            biene_busy.lock().unwrap()[biene_index - 1] = false;
                         });
                         biene_handles.push(handle);
                     }
@@ -222,16 +281,16 @@ pub fn run(lines: Vec<&str>) {
                             thread::sleep(Duration::from_secs(sleep_secs));
                             match name {
                                 true => {
-                                    waben.lock().unwrap()[wabe_index].name =
-                                        bienen.lock().unwrap()[biene_index].name.to_owned()
+                                    waben.lock().unwrap()[wabe_index - 1].name +=
+                                        &bienen.lock().unwrap()[biene_index - 1].name.to_owned()
                                 }
                                 false => {
-                                    waben.lock().unwrap()[wabe_index].honig +=
-                                        bienen.lock().unwrap()[biene_index].honig;
-                                    bienen.lock().unwrap()[biene_index].honig = 0;
+                                    waben.lock().unwrap()[wabe_index - 1].honig +=
+                                        bienen.lock().unwrap()[biene_index - 1].honig;
+                                    bienen.lock().unwrap()[biene_index - 1].honig = 0;
                                 }
                             };
-                            biene_busy.lock().unwrap()[biene_index] = false;
+                            biene_busy.lock().unwrap()[biene_index - 1] = false;
                         });
                         biene_handles.push(handle);
                     }
@@ -241,66 +300,125 @@ pub fn run(lines: Vec<&str>) {
                 // CMD Biene A, ... und warte.
                 match params.nth(1) {
                     Some("warte") => {
-                        while biene_busy.lock().unwrap()[biene_index] {
+                        let start_wait = Instant::now();
+                        while biene_busy.lock().unwrap()[biene_index - 1] {
                             thread::sleep(Duration::from_millis(1));
+                            if start_wait.elapsed() > Duration::from_secs(10) {
+                                panic!("Die Bienen sind reichlich verwirrt.");
+                            }
                         }
                     }
                     Some(_) => panic!("Unknown Command: {command}"),
                     None => (),
                 }
             }
+            "Starte" => {
+                // CMD Starte die Choreografie X.
+                let choreografie = "\"".to_string() + command.split("\"").nth(1).unwrap() + "\"";
+                for (nr, line) in lines.iter().enumerate() {
+                    // println!("no {}, {}", nr, line);
+                    if line.contains(&choreografie) && line.starts_with("Hier") {
+                        // println!("yes {}, {}", nr, line);
+                        line_number = nr;
+                        break;
+                    }
+                }
+            }
             "Wenn" => {
                 // CMD Wenn A B mehr Honig hat als C D, starte die Choreografie E.
                 // CMD Wenn A B gleich viel Honig hat als C D, starte die Choreografie E.
                 // CMD Wenn A B weniger Honig hat als C D, starte die Choreografie E.
+                // CMD Wenn A B gleich heißt wie C D, starte die Choreografie E.
                 let obj1_biene = match params.next().unwrap() {
                     "Biene" => true,
                     "Wabe" => false,
-                    _ => panic!("Unknown Command: {command}")
+                    _ => panic!("Unknown Command: {command}"),
                 };
                 let obj1_index: usize = params.next().unwrap().parse().unwrap();
 
                 let comparison = match params.next().unwrap() {
                     "gleich" => {
-                        // skip "viel"
-                        params.next();
-                        "gleich"
-                    },
-                    comp => comp,
+                        match params.next().unwrap() {
+                            "viel" => {
+                                // skip "Honig hat"
+                                params.nth(1);
+                                "gleich"
+                            }
+                            _ => "name",
+                        }
+                    }
+                    comp => {
+                        // skip "Honig hat"
+                        params.nth(1);
+                        comp
+                    }
                 };
 
-                let obj2_biene = match params.nth(3).unwrap() {
+                let obj2_biene = match params.nth(1).unwrap() {
                     "Biene" => true,
                     "Wabe" => false,
-                    _ => panic!("Unknown Command: {command}")
+                    _ => panic!("Unknown Command: {command}"),
                 };
                 // remove colon from index
                 let mut obj2_index = params.next().unwrap().to_string();
                 obj2_index.pop().unwrap();
                 let obj2_index: usize = obj2_index.parse().unwrap();
 
-                let val1 = match obj1_biene {
-                    true => bienen.lock().unwrap()[obj1_index].honig,
-                    false => waben.lock().unwrap()[obj1_index].honig,
-                };
+                match comparison {
+                    "name" => {
+                        // check if names are the same
+                        let name1 = match obj1_biene {
+                            true => bienen.lock().unwrap()[obj1_index - 1].name.to_owned(),
+                            false => waben.lock().unwrap()[obj1_index - 1].name.to_owned(),
+                        };
 
-                let val2 = match obj2_biene {
-                    true => bienen.lock().unwrap()[obj2_index].honig,
-                    false => waben.lock().unwrap()[obj2_index].honig,
-                };
+                        let name2 = match obj2_biene {
+                            true => bienen.lock().unwrap()[obj2_index - 1].name.to_owned(),
+                            false => waben.lock().unwrap()[obj2_index - 1].name.to_owned(),
+                        };
 
-                if match comparison {
-                    "gleich" => val1 == val2,
-                    "weniger" => val1 < val2,
-                    "mehr" => val1 > val2,
-                    _ => panic!("Unknown Command: {command}")
-                } {
-                    // start choreografie
-                    let choreografie = "\"".to_string() + command.split("\"").nth(1).unwrap() + "\"";
-                    for (nr, line) in lines.iter().enumerate() {
-                        if line.contains(&choreografie) {
-                            line_number = nr;
-                            break;
+                        if name1 == name2 {
+                            // start choreografie
+                            let choreografie =
+                                "\"".to_string() + command.split("\"").nth(1).unwrap() + "\"";
+                            for (nr, line) in lines.iter().enumerate() {
+                                if line.contains(&choreografie) && line.starts_with("Hier") {
+                                    line_number = nr;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        // compare honey values
+                        let val1 = match obj1_biene {
+                            true => bienen.lock().unwrap()[obj1_index - 1].honig,
+                            false => waben.lock().unwrap()[obj1_index - 1].honig,
+                        };
+
+                        let val2 = match obj2_biene {
+                            true => bienen.lock().unwrap()[obj2_index - 1].honig,
+                            false => waben.lock().unwrap()[obj2_index - 1].honig,
+                        };
+
+                        // DEBUG
+                        // println!("{val1} soll {comparison} sein wie {val2}.");
+
+                        if match comparison {
+                            "gleich" => val1 == val2,
+                            "weniger" => val1 < val2,
+                            "mehr" => val1 > val2,
+                            _ => panic!("Unknown Command: {command}"),
+                        } {
+                            // start choreografie
+                            let choreografie =
+                                "\"".to_string() + command.split("\"").nth(1).unwrap() + "\"";
+                            for (nr, line) in lines.iter().enumerate() {
+                                if line.contains(&choreografie) && line.starts_with("Hier") {
+                                    line_number = nr;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
@@ -309,7 +427,7 @@ pub fn run(lines: Vec<&str>) {
                 // CMD Warte auf Biene A.
                 // wait for thread to end
                 let biene_index: usize = params.nth(2).unwrap().parse().unwrap();
-                while biene_busy.lock().unwrap()[biene_index] {
+                while biene_busy.lock().unwrap()[biene_index - 1] {
                     thread::sleep(Duration::from_millis(1));
                 }
             }
@@ -319,7 +437,9 @@ pub fn run(lines: Vec<&str>) {
                     panic!("Comment was not properly closed: {command}");
                 }
             }
-            "So!" => { break; },
+            "So!" => {
+                break;
+            }
             _ => panic!("Unknown Command: '{command}'"),
         }
 

@@ -1,0 +1,13 @@
+Biene 1, sammle Nektar vom Benutzer und warte.
+Wenn Biene 1 mehr Honig hat als Wabe 1, starte die Choreografie "positiv".
+Wenn Biene 1 weniger Honig hat als Wabe 1, starte die Choreografie "negativ".
+Wabe 1 heißt "Die Zahl ist weder positiv noch negativ.".
+Starte die Choreografie "print".
+Hier startet die Choreografie "positiv".
+Wabe 1 heißt "Die Zahl ist positiv".
+Starte die Choreografie "print".
+Hier startet die Choreografie "negativ".
+Wabe 1 heißt "Die Zahl ist negativ".
+Hier startet die Choreografie "print".
+Biene 1, tanze den Namen von Wabe 1.
+So!

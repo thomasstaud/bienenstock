@@ -1,11 +1,11 @@
 # bienenstock
- Esolang written in Rust
+ Esolang, geschrieben in Rust
 
 
-example code:
+Beispielcode:
 
-	<#!--: Schleifen v1 :--!#>.
-	Wabe 1 heißt "test".
+	<#!--: Printet 10 mal "Hallo" :--!#>.
+	Wabe 1 heißt "Hallo".
 	Biene 2, hole 10 Nektar und warte.
 	Biene 2, bringe Honig zu Wabe 1 und warte.
 	Hier startet die Choreografie "print loop".

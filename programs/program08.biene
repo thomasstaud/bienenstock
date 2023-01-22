@@ -1,0 +1,9 @@
+<#!--: String-Concatenation v1 :--!#>.
+Wabe 1 heißt "dHello".
+Wabe 2 heißt "Worl".
+Biene 1, hole Buchstabe 1 von Wabe 1 und warte.
+Biene 1, bringe Namen zu Wabe 2 und warte.
+Wabe 3 heißt "[Name Wabe 2]".
+Biene 2, tanze den Namen von Wabe 3.
+Biene 1, tanze den Namen von Wabe 1.
+So!

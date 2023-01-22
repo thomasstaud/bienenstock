@@ -1,0 +1,10 @@
+Biene 1, sammle Namen vom Benutzer und warte.
+Biene 1, bringe Namen zu Wabe 1 und warte.
+Hier startet die Choreografie "get char".
+Biene 1, hole Buchstabe [Namenslänge Wabe 1] von Wabe 1 und warte.
+Biene 1, bringe Namen zu Wabe 2 und warte.
+Wenn Wabe 1 gleich heißt wie Wabe 3, starte die Choreografie "print".
+Starte die Choreografie "get char".
+Hier startet die Choreografie "print".
+Biene 1, tanze den Namen von Wabe 2.
+So!

@@ -1,11 +1,11 @@
-<#!--: Zahl ausgeben v2 (mit Threads) :--!#>
+<#!--: Zahl ausgeben v2 (mit Threads) :--!#>.
 Wabe 1 heißt "Gib eine Zahl ein:".
 Biene 1, tanze den Namen von Wabe 1.
 Biene 2, sammle Nektar vom Benutzer.
 Warte auf Biene 2.
 Wabe 1 heißt "Eingegebene Zahl:".
 Biene 1, tanze den Namen von Wabe 1.
-Biene 2, bringe Nektar zu Wabe 1.
+Biene 2, bringe Honig zu Wabe 1.
 Warte auf Biene 2.
 Biene 2, tanze den Honig von Wabe 1.
 So!
