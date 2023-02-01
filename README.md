@@ -13,3 +13,33 @@ Beispielcode:
 	Biene 1, tanze den Namen von Wabe 1 und warte.
 	Wenn Wabe 1 mehr Honig hat als Biene 1, starte die Choreografie "print loop".
 	So!
+
+Fibonacci-Folge:
+
+	Wabe 10 heißt "Gib eine Zahl ein (max 47):".
+	Biene 10, tanze den Namen von Wabe 10 und warte.
+	Biene 1, sammle Nektar vom Benutzer und warte.
+	Biene 1, bringe Honig zu Wabe 1 und warte.
+	Biene 2, hole 1 Honig aus Wabe 1.
+	Biene 4, hole 1 Nektar.
+	Biene 3, hole 1 Nektar und warte.
+	Warte auf Biene 2.
+	Biene 4, bringe Honig zu Wabe 2.
+	Biene 3, bringe Honig zu Wabe 3.
+	Wabe 10 heißt "Fibonacci-Folge:".
+	Biene 10, tanze den Namen von Wabe 10.
+	Warte auf Biene 4.
+	Biene 1, tanze den Honig von Wabe 2 und warte.
+	Hier startet die Choreografie "loop".
+	Biene 2, hole 1 Honig aus Wabe 1.
+	Warte auf Biene 3.
+	Warte auf Biene 4.
+	Biene 3, hole [Honig Wabe 3] Nektar.
+	Biene 4, hole [Honig Wabe 2] Nektar und warte.
+	Warte auf Biene 3.
+	Biene 5, hole [Honig Wabe 2] Honig von Wabe 2.
+	Biene 3, bringe Honig zu Wabe 2.
+	Biene 4, bringe Honig zu Wabe 3.
+	Biene 1, tanze den Honig von Wabe 3.
+	Wenn Wabe 1 mehr Honig hat als Biene 1, starte die Choreografie "loop".
+	So!
