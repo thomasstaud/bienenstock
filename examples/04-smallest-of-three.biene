@@ -1,0 +1,29 @@
+Wabe 1 heißt "Gib die 1. Zahl ein:".
+Wabe 2 heißt "Gib die 2. Zahl ein:".
+Wabe 3 heißt "Gib die 3. Zahl ein:".
+Biene 4, tanze den Namen von Wabe 1 und warte.
+Biene 1, sammle Nektar vom Benutzer.
+Biene 4, tanze den Namen von Wabe 2 und warte.
+Biene 2, sammle Nektar vom Benutzer.
+Biene 4, tanze den Namen von Wabe 3 und warte.
+Biene 3, sammle Nektar vom Benutzer.
+Wabe 4 heißt "Die kleinste Zahl ist:".
+Biene 4, tanze den Namen von Wabe 4.
+Warte auf Biene 3.
+Wenn Biene 1 weniger Honig hat als Biene 2, starte die Choreografie "1 oder 3".
+Wenn Biene 2 weniger Honig hat als Biene 3, starte die Choreografie "2".
+Biene 3, bringe Honig zu Wabe 4 und warte.
+Starte die Choreografie "So!".
+Hier startet die Choreografie "1 oder 3".
+Wenn Biene 1 weniger Honig hat als Biene 3, starte die Choreografie "1".
+Biene 3, bringe Honig zu Wabe 4 und warte.
+Starte die Choreografie "So!".
+Hier startet die Choreografie "2".
+Biene 2, bringe Honig zu Wabe 4 und warte.
+Starte die Choreografie "So!".
+Hier startet die Choreografie "1".
+Biene 1, bringe Honig zu Wabe 4 und warte.
+Hier startet die Choreografie "So!".
+Warte auf Biene 4.
+Biene 4, tanze den Honig von Biene 4.
+So!

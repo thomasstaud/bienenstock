@@ -1,5 +1,6 @@
 use std::{
     io,
+    process::exit,
     sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
@@ -13,6 +14,11 @@ struct Biene {
 struct Wabe {
     name: String,
     honig: u32,
+}
+
+fn error(msg: &str) -> ! {
+    println!("{}", msg);
+    exit(98101101)
 }
 
 // executes bienenstock code
@@ -60,13 +66,19 @@ pub fn run(lines: Vec<&str>) {
                 Some("Name") => 0,
                 Some("Honig") => 1,
                 Some("Namenslänge") => 2,
-                _ => panic!("Syntax Error"),
+                _ => error(&format!(
+                    "Die Bienen verstehen die Zeile {} nicht.",
+                    line_number + 1
+                )),
             };
 
             let biene: bool = match params.next() {
                 Some("Biene") => true,
                 Some("Wabe") => false,
-                _ => panic!("Syntax Error"),
+                _ => error(&format!(
+                    "Die Bienen verstehen die Zeile {} nicht.",
+                    line_number + 1
+                )),
             };
             let index: usize = params.next().unwrap().parse().unwrap();
 
@@ -84,7 +96,7 @@ pub fn run(lines: Vec<&str>) {
                     true => bienen.lock().unwrap()[index - 1].name.len().to_string(),
                     false => waben.lock().unwrap()[index - 1].name.len().to_string(),
                 },
-                _ => panic!("Fehler im bienenstock code."),
+                _ => panic!("AMBIGUOUS INTERNAL ERROR"),
             };
 
             tmp_command = str::replace(&command, &replace_from, &replace_to);
@@ -119,7 +131,11 @@ pub fn run(lines: Vec<&str>) {
 
                 if biene_busy.lock().unwrap()[biene_index - 1] {
                     // crash if biene is already doing something
-                    panic!("Biene {biene_index} is busy!");
+                    error(&format!(
+                        "Biene {} kann in Zeile {} nicht einspringen, sie ist schon beschäftigt.",
+                        biene_index,
+                        line_number + 1
+                    ));
                 } else {
                     // set biene to busy
                     biene_busy.lock().unwrap()[biene_index - 1] = true;
@@ -132,7 +148,10 @@ pub fn run(lines: Vec<&str>) {
                         let name: bool = match params.nth(1) {
                             Some("Namen") => true,
                             Some("Honig") => false,
-                            _ => panic!("Syntax Error"),
+                            _ => error(&format!(
+                                "Die Biene versteht nicht, was sie in Zeile {} tanzen soll.",
+                                line_number + 1
+                            )),
                         };
 
                         let wabe_index: usize = params.nth(2).unwrap().parse().unwrap();
@@ -224,7 +243,10 @@ pub fn run(lines: Vec<&str>) {
                                         });
                                         biene_handles.push(handle);
                                     }
-                                    _ => panic!("Syntax Error"),
+                                    _ => error(&format!(
+                                        "Die Biene versteht nicht, was sie in Zeile {} holen soll.",
+                                        line_number + 1
+                                    )),
                                 }
                             }
                         }
@@ -238,7 +260,10 @@ pub fn run(lines: Vec<&str>) {
                         let name: bool = match params.next() {
                             Some("Namen") => true,
                             Some("Nektar") => false,
-                            _ => panic!("Syntax Error"),
+                            _ => error(&format!(
+                                "Die Biene versteht nicht, was sie in Zeile {} sammeln soll.",
+                                line_number + 1
+                            )),
                         };
 
                         params.nth(1);
@@ -254,8 +279,10 @@ pub fn run(lines: Vec<&str>) {
                                         input.trim().to_string()
                                 }
                                 false => {
-                                    bienen.lock().unwrap()[biene_index - 1].honig =
-                                        input.trim().parse().unwrap()
+                                    bienen.lock().unwrap()[biene_index - 1].honig = input
+                                        .trim()
+                                        .parse()
+                                        .expect("Die Bienen sind reichlich verwirrt.")
                                 }
                             };
                             biene_busy.lock().unwrap()[biene_index - 1] = false;
@@ -268,7 +295,10 @@ pub fn run(lines: Vec<&str>) {
                         let name: bool = match params.next() {
                             Some("Namen") => true,
                             Some("Honig") => false,
-                            _ => panic!("Syntax Error"),
+                            _ => error(&format!(
+                                "Die Biene versteht nicht, was sie in Zeile {} bringen soll.",
+                                line_number + 1
+                            )),
                         };
 
                         let wabe_index: usize = params.nth(2).unwrap().parse().unwrap();
@@ -294,7 +324,10 @@ pub fn run(lines: Vec<&str>) {
                         });
                         biene_handles.push(handle);
                     }
-                    _ => panic!("Unknown Command: '{command}'"),
+                    _ => error(&format!(
+                        "Die Biene versteht nicht, was sie in Zeile {} machen soll.",
+                        line_number + 1
+                    )),
                 }
 
                 // CMD Biene A, ... und warte.
@@ -304,11 +337,17 @@ pub fn run(lines: Vec<&str>) {
                         while biene_busy.lock().unwrap()[biene_index - 1] {
                             thread::sleep(Duration::from_millis(1));
                             if start_wait.elapsed() > Duration::from_secs(10) {
-                                panic!("Die Bienen sind reichlich verwirrt.");
+                                error(&format!(
+                                    "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                                    line_number + 1
+                                ));
                             }
                         }
                     }
-                    Some(_) => panic!("Unknown Command: {command}"),
+                    Some(_) => error(&format!(
+                        "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                        line_number + 1
+                    )),
                     None => (),
                 }
             }
@@ -332,7 +371,10 @@ pub fn run(lines: Vec<&str>) {
                 let obj1_biene = match params.next().unwrap() {
                     "Biene" => true,
                     "Wabe" => false,
-                    _ => panic!("Unknown Command: {command}"),
+                    _ => error(&format!(
+                        "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                        line_number + 1
+                    )),
                 };
                 let obj1_index: usize = params.next().unwrap().parse().unwrap();
 
@@ -357,7 +399,10 @@ pub fn run(lines: Vec<&str>) {
                 let obj2_biene = match params.nth(1).unwrap() {
                     "Biene" => true,
                     "Wabe" => false,
-                    _ => panic!("Unknown Command: {command}"),
+                    _ => error(&format!(
+                        "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                        line_number + 1
+                    )),
                 };
                 // remove colon from index
                 let mut obj2_index = params.next().unwrap().to_string();
@@ -408,7 +453,10 @@ pub fn run(lines: Vec<&str>) {
                             "gleich" => val1 == val2,
                             "weniger" => val1 < val2,
                             "mehr" => val1 > val2,
-                            _ => panic!("Unknown Command: {command}"),
+                            _ => error(&format!(
+                                "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                                line_number + 1
+                            )),
                         } {
                             // start choreografie
                             let choreografie =
@@ -434,13 +482,19 @@ pub fn run(lines: Vec<&str>) {
             "Hier" => (),
             "<#!--:" => {
                 if params.last().unwrap() != ":--!#>" {
-                    panic!("Comment was not properly closed: {command}");
+                    error(&format!(
+                        "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                        line_number + 1
+                    ));
                 }
             }
             "So!" => {
                 break;
             }
-            _ => panic!("Unknown Command: '{command}'"),
+            _ => error(&format!(
+                "Die Bienen sind in Zeile {} reichlich verwirrt.",
+                line_number + 1
+            )),
         }
 
         line_number += 1;
